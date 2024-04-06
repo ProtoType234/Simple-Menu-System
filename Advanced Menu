@@ -1,0 +1,231 @@
+local TweenService = game:GetService("TweenService")
+local btnInfo = TweenInfo.new(0.07, Enum.EasingStyle.Sine)
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local cc = workspace.Camera
+local ProfileMenu = script.Parent.Parent.ProfileGui
+
+local camerapart = workspace:WaitForChild("CameraPart").CFrame
+
+repeat wait()
+	cc.CameraType = Enum.CameraType.Scriptable
+until cc.CameraType == Enum.CameraType.Scriptable
+
+cc.CFrame = camerapart
+
+local Tabs = {
+	Home = script.Parent.HomeTab,
+	Gamepasses = script.Parent.GamepassTab
+}
+
+local GamepassFrame = script.Parent.GamepassesFrame
+GamepassFrame.Size = UDim2.new(0,0,0,0)
+GamepassFrame.Position = UDim2.new(1, 0,3, 0)
+local PlayButton = script.Parent.Main.Play.Button
+	
+local ScrollThingy = script.Parent.Scroll.Main
+
+PlayButton.Parent.MouseEnter:Connect(function()
+	local tween = TweenService:Create(PlayButton.Parent, btnInfo, {Size = UDim2.new(0.184, 0,0.08, 0)}):Play()
+end)
+
+PlayButton.Parent.MouseLeave:Connect(function()
+	local tween = TweenService:Create(PlayButton.Parent, btnInfo, {Size = UDim2.new(0.184, 0,0.05, 0)}):Play()
+end)
+
+PlayButton.Activated:Connect(function()
+	script.Parent.Fade.BackgroundTransparency = 0
+	local tween = TweenService:Create(script.Parent.Fade, TweenInfo.new(8, Enum.EasingStyle.Sine), {Transparency = 1})
+	tween:Play()
+	
+	cc.CameraType = Enum.CameraType.Custom
+	script.Parent.Main.Visible = false
+	script.Parent.Scroll.Visible = false
+	script.Parent.HomeTab.Visible = false
+	script.Parent.GamepassTab.Visible = false
+	GamepassFrame.Visible = false
+	ProfileMenu.Enabled = true
+	game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, true)
+end)
+
+Tabs.Gamepasses.Activated:Connect(function()
+	Tabs.Home.UIStroke.Enabled = false
+	Tabs.Gamepasses.UIStroke.Enabled = true
+	GamepassFrame.Position = UDim2.new(0.227, 0,0.637, 0)
+	local tween = TweenService:Create(ScrollThingy, btnInfo, {Position = ScrollThingy.Parent.GamepassPosition.Position}):Play()
+	GamepassFrame.Visible = true
+	script.Parent.Main.Visible = false
+	local OpenTween = TweenService:Create(GamepassFrame, btnInfo, {Size = UDim2.new(0.404, 0,0.465, 0)}):Play()
+	
+end)
+
+Tabs.Home.Activated:Connect(function()
+	script.Parent.Main.Visible = true
+	Tabs.Home.UIStroke.Enabled = true
+	Tabs.Gamepasses.UIStroke.Enabled = false
+	GamepassFrame.Position = UDim2.new(1, 0,3, 0)
+	local OpenTween = TweenService:Create(GamepassFrame, btnInfo, {Size = UDim2.new(0, 0, 0, 0)}):Play()
+	local tween = TweenService:Create(ScrollThingy, btnInfo, {Position = UDim2.new(0.029, 0,-0, 0)}):Play()
+end)
+
+
+local MarketPlaceService = game:GetService("MarketplaceService")
+local TweenService = game:GetService("TweenService")
+local MousePlusModule = require(game.ReplicatedStorage.MousePlus)
+
+local player = game.Players.LocalPlayer
+local mouse = player:GetMouse()
+
+local connection
+
+local function MouseEnterLeave(object, id)
+	local GamepassInfoTemplate = script.Parent.Parent.GamepassInfoTemplate
+	local ProductInfo = MarketPlaceService:GetProductInfo(id, Enum.InfoType.GamePass)
+	object.ImageLabel.Image = "rbxassetid://"..ProductInfo.IconImageAssetId
+	local MouseEnter, MouseLeave = MousePlusModule.MouseEnterLeaveEvent(object)
+	
+	MouseEnter:Connect(function()
+		connection = game["Run Service"].RenderStepped:Connect(function()
+			GamepassInfoTemplate.Position = UDim2.new(0, mouse.X, 0, mouse.Y)
+		end)
+		
+		GamepassInfoTemplate.Visible = true
+		GamepassInfoTemplate.GamepassName.Text = ProductInfo.Name
+		GamepassInfoTemplate.Robuxprice.Text = "R$ "..ProductInfo.PriceInRobux
+		GamepassInfoTemplate.GamepassDescription.Text = ProductInfo.Description
+	end)
+	
+	MouseLeave:Connect(function()
+		connection:Disconnect()
+		GamepassInfoTemplate.Visible = false
+	end)
+	
+	object.TextButton.Activated:Connect(function()
+		MarketPlaceService:PromptGamePassPurchase(player, id)
+	end)
+end
+
+local id
+local objectFrame
+
+for _, GamepassFrame in ipairs(script.Parent:GetChildren()) do
+	if GamepassFrame:IsA("Frame") then
+		objectFrame = GamepassFrame.Frame
+		id = GamepassFrame.GamepassId.Value
+
+		if id ~= nil and objectFrame ~= nil then
+			MouseEnterLeave(objectFrame, id)
+		end
+	end
+end
+
+for _, GamepassFrame in ipairs(script.Parent:GetChildren()) do
+	if GamepassFrame:IsA("Frame") then
+		local Btninfo = TweenInfo.new(0.05, Enum.EasingStyle.Linear)
+		local BtnClickedTween = TweenService:Create(GamepassFrame.Frame.TextButton, Btninfo, {Size = UDim2.new(0, 175, 0, 40)})
+		local MouseHoverLeaveTween = TweenService:Create(GamepassFrame.Frame.TextButton, Btninfo, {Size = UDim2.new(0, 170, 0, 35)})
+		local MouseHoverTween = TweenService:Create(GamepassFrame.Frame.TextButton, Btninfo, {Size = UDim2.new(0, 175, 0, 40)})
+		
+		GamepassFrame.Frame.TextButton.MouseEnter:Connect(function()
+			MouseHoverTween:Play()
+			MouseHoverLeaveTween:Pause()
+		end)
+		
+		GamepassFrame.Frame.TextButton.MouseLeave:Connect(function()
+			MouseHoverLeaveTween:Play()
+		end)
+		
+		GamepassFrame.Frame.TextButton.Activated:Connect(function()
+			BtnClickedTween:Play()
+		end)
+		
+		--PurchaseTweens(GamepassFrame.Frame.TextButton)
+	end
+end
+
+--// MouseEnterLeaveModule
+
+local Player = game.Players.LocalPlayer or game.Players:GetPropertyChangedSignal("LocalPlayer")
+
+local Mouse = Player:GetMouse()
+
+local CurrentItems = {}
+
+--Private functions
+local function IsInFrame(v)
+
+	local X = Mouse.X
+	local Y = Mouse.Y
+
+	if X>v.AbsolutePosition.X and Y>v.AbsolutePosition.Y and X<v.AbsolutePosition.X+v.AbsoluteSize.X and Y<v.AbsolutePosition.Y+v.AbsoluteSize.Y then
+		return true
+	else 
+		return false
+	end
+end
+
+local function CheckMouseExited(Object)
+
+	if not Object.MouseIsInFrame and Object.MouseWasIn then --Mouse was previously over object, fire leave event
+		Object.MouseWasIn = false
+		Object.LeaveEvent:Fire()
+	end
+end
+
+
+local function CheckMouseEntered(Object)
+	if Object.MouseIsInFrame and not Object.MouseWasIn then
+		Object.MouseWasIn = true
+		Object.EnteredEvent:Fire()
+	end
+end
+
+game:GetService("RunService").Heartbeat:Connect(function()
+	--Check each UI object
+	--All exit events fire before all enter events for ease of use, so check for mouse exit events here
+	for _, Object in pairs(CurrentItems) do
+		Object.MouseIsInFrame = IsInFrame(Object.UIObj)
+		CheckMouseExited(Object)
+	end
+
+	--Now check if the mouse entered any frames
+	for _, Object in pairs(CurrentItems) do
+		CheckMouseEntered(Object)
+	end
+end)
+
+--Public functions
+
+local module = {}
+
+function module.MouseEnterLeaveEvent(UIObj)
+	if CurrentItems[UIObj] then
+		return CurrentItems[UIObj].EnteredEvent.Event,CurrentItems[UIObj].LeaveEvent.Event
+	end     
+
+	local newObj = {}
+
+	newObj.UIObj = UIObj
+
+	local EnterEvent = Instance.new("BindableEvent")
+	local LeaveEvent = Instance.new("BindableEvent")
+
+	newObj.EnteredEvent = EnterEvent
+	newObj.LeaveEvent = LeaveEvent
+	newObj.MouseWasIn = false
+	CurrentItems[UIObj] = newObj
+
+	UIObj.AncestryChanged:Connect(function()
+		if not UIObj.Parent then
+			--Assuming the object has been destroyed as we still dont have a .Destroyed event
+			--If for some reason you parent your UI elements to nil after calling this, then parent it back again, mouse over will still have been disconnected.
+			EnterEvent:Destroy()    
+			LeaveEvent:Destroy()    
+			CurrentItems[UIObj] = nil
+		end
+	end)
+
+	return EnterEvent.Event,LeaveEvent.Event
+end
+
+return module
